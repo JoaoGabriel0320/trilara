@@ -1,0 +1,442 @@
+// Esquema do banco — Trilara
+// Docs: https://pris.ly/d/prisma-schema
+//
+// Regra de ouro deste schema: o banco NUNCA redefine um sistema.
+// A lista de sistemas (nome, logo, cor, status) vive em src/data/systems.ts e é a
+// fonte de verdade também do site público. Aqui só guardamos `sistemaSlug`, que
+// espelha `System.slug` daquele arquivo — assim não existem duas listas divergindo.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Papel define quem pode publicar conteúdo. COLABORADOR só lê.
+enum Papel {
+  COLABORADOR
+  EDITOR
+  ADMIN
+}
+
+enum Publico {
+  INTERNO
+  EXTERNO
+}
+
+// Formato do conteúdo de um documento.
+enum TipoDocumento {
+  PDF // arquivo no storage privado (arquivoKey)
+  ARTIGO // texto markdown e/ou imagens enviadas pelo painel
+  LINK // aponta para uma doc externa (urlExterna)
+  GIF // animação .gif no storage privado (arquivoKey)
+  PASSO_A_PASSO // passos numerados em PassoDocumento; prints em DocumentoImagem
+}
+
+// Destaque opcional de um passo do formato Passo a passo.
+enum TipoDestaquePasso {
+  REGRA
+  ATENCAO
+  DICA
+}
+
+enum StatusRelatoDocumento {
+  ABERTO
+  RESOLVIDO
+}
+
+// Fluxo de uma ideia no laboratório. Muda só por quem pode publicar
+// (EDITOR/ADMIN) — o autor não move a própria ideia de estágio.
+enum StatusIdeia {
+  NOVA
+  EM_ANALISE
+  APROVADA
+  ARQUIVADA
+}
+
+// Colaborador com acesso à área de documentação. Login por e-mail + senha.
+model Colaborador {
+  id                 String    @id @default(uuid())
+  nome               String
+  email              String    @unique
+  senhaHash          String
+  departamento       String?   @map("cargo")
+  filialNome         String?
+  fotoKey            String?   // imagem privada do perfil, carregada apenas pela própria conta
+  papel              Papel     @default(COLABORADOR)
+  tipoAcesso         Publico   @default(INTERNO)
+  empresaNome        String?   // identificação manual até integrar o cadastro de empresas
+  ativo              Boolean   @default(true)
+  adminProtegido     Boolean   @default(false)
+  mustChangePassword Boolean   @default(false) // força definição de nova senha no próximo login
+  criadoEm           DateTime  @default(now())
+  ultimoLoginEm      DateTime?
+  ultimaAtividadeEm   DateTime?
+  resetToken         String?
+  resetTokenExpiry   DateTime?
+
+  documentosCriados Documento[]  @relation("DocumentoAutor")
+  relatosDocumento RelatoDocumento[] @relation("RelatoAutor")
+  ideias            Ideia[]      @relation("IdeiaAutor")
+  apoios            ApoioIdeia[]
+  avaliacoesSistemas AvaliacaoSistema[]
+  favoritosDocumento FavoritoDocumento[]
+  sessoes            SessaoColaborador[]
+  usosAssistente     UsoAssistente[]
+  consultasAssistente ConsultaAssistente[]
+  conversasAssistente ConversaAssistente[]
+
+  @@index([ativo])
+  @@index([ultimaAtividadeEm])
+}
+
+model SessaoColaborador {
+  id            String      @id @default(uuid())
+  colaboradorId String
+  colaborador   Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  criadaEm      DateTime    @default(now())
+  expiraEm      DateTime
+  substituidaEm DateTime?   // novo login nesta conta encerrou esta sessão
+
+  @@index([colaboradorId])
+  @@index([colaboradorId, substituidaEm])
+  @@index([expiraEm])
+}
+
+// Alterações no catálogo. Os sistemas originais continuam como base em código;
+// registros aqui substituem seus dados ou os arquivam sem perder documentos.
+model SistemaCadastro {
+  slug         String   @id
+  dados        Json
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([ativo])
+}
+
+model Filial {
+  id           String              @id @default(uuid())
+  nome         String              @unique
+  ativa        Boolean             @default(true)
+  criadaEm     DateTime            @default(now())
+  solicitacoes SolicitacaoAcesso[]
+}
+
+model Departamento {
+  id       String   @id @default(uuid())
+  nome     String   @unique
+  ativo    Boolean  @default(true)
+  criadoEm DateTime @default(now())
+}
+
+enum StatusSolicitacao {
+  PENDENTE
+  APROVADA
+  REPROVADA
+}
+
+model SolicitacaoAcesso {
+  id            String            @id @default(uuid())
+  nome          String
+  email         String
+  senhaHash     String
+  tipoAcesso    Publico           @default(INTERNO)
+  empresaNome   String?
+  departamento  String?
+  filialId      String?
+  filial        Filial?           @relation(fields: [filialId], references: [id])
+  status        StatusSolicitacao @default(PENDENTE)
+  criadaEm      DateTime          @default(now())
+  decididaEm    DateTime?
+  decididaPorId String?
+
+  @@index([status, criadaEm])
+  @@index([email, status])
+}
+
+// Seção dentro de um sistema (ex: "Primeiros passos", "Relatórios").
+// Opcional: documento sem categoria aparece no grupo "Geral".
+model Categoria {
+  id          String      @id @default(uuid())
+  sistemaSlug String // espelha System.slug de src/data/systems.ts
+  nome        String
+  ordem       Int         @default(0)
+  ativo       Boolean     @default(true)
+  criadoEm    DateTime    @default(now())
+  documentos  Documento[]
+
+  @@unique([sistemaSlug, nome])
+  @@index([sistemaSlug, ativo, ordem])
+}
+
+// Manual/artigo disponível para consulta pelos colaboradores logados.
+model Documento {
+  id          String        @id @default(uuid())
+  sistemaSlug String // a qual sistema este documento pertence
+  slug        String // usado na URL: /documentacao/<sistemaSlug>/<slug>
+  titulo      String
+  descricao   String?
+  tipo        TipoDocumento @default(PDF)
+  publico     Publico       @default(INTERNO)
+
+  // tipo = PDF ou GIF
+  arquivoKey   String? // caminho relativo dentro do storage PRIVADO (nunca em public/)
+  arquivoNome  String? // nome original, usado no download
+  arquivoBytes Int?
+
+  conteudo   String? // tipo = ARTIGO — markdown opcional quando houver imagens
+  urlExterna String? // tipo = LINK
+
+  // Termos que o colaborador digita na busca mas que não aparecem no título —
+  // gírias, sinônimos, nome antigo do módulo. Livre, separado por vírgula.
+  palavrasChave String?
+
+  // Destaca o documento no bloco "Comece por aqui" da página do sistema.
+  comecePorAqui Boolean @default(false)
+
+  categoriaId String?
+  categoria   Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+
+  autorId String?
+  autor   Colaborador? @relation("DocumentoAutor", fields: [autorId], references: [id], onDelete: SetNull)
+
+  imagens DocumentoImagem[]
+  passos  PassoDocumento[]
+  relatos RelatoDocumento[]
+  favoritos FavoritoDocumento[]
+  indiceAssistente IndiceDocumentoAssistente?
+
+  ordem         Int      @default(0)
+  ativo         Boolean  @default(true) // despublica sem apagar
+  visualizacoes Int      @default(0)
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+
+  @@unique([sistemaSlug, slug])
+  @@index([publico, sistemaSlug, ativo, ordem])
+  @@index([sistemaSlug, ativo, ordem])
+  @@index([categoriaId])
+}
+
+// Texto extraído localmente; nunca é usado sem validar a publicação e a assinatura do conteúdo.
+model IndiceDocumentoAssistente {
+  documentoId String @id
+  documento Documento @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  assinatura String
+  dados Json
+  indexadoEm DateTime @updatedAt
+}
+
+model RelatoDocumento {
+  id String @id @default(uuid())
+  documentoId String?
+  documento Documento? @relation(fields: [documentoId], references: [id], onDelete: SetNull)
+  tituloDocumento String
+  sistemaSlug String
+  autorId String?
+  autor Colaborador? @relation("RelatoAutor", fields: [autorId], references: [id], onDelete: SetNull)
+  autorNome String
+  mensagem String
+  // Preenchidos quando o relato veio de "Relatar problema neste passo".
+  passoNumero Int?
+  passoTitulo String?
+  status StatusRelatoDocumento @default(ABERTO)
+  resolvidoPor String?
+  resolvidoEm DateTime?
+  criadoEm DateTime @default(now())
+
+  @@index([status, criadoEm])
+  @@index([documentoId, status])
+}
+
+// Um documento salvo por colaborador, disponível em qualquer dispositivo.
+model FavoritoDocumento {
+  colaboradorId String
+  documentoId String
+  criadoEm DateTime @default(now())
+  colaborador Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  documento Documento @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+
+  @@id([colaboradorId, documentoId])
+  @@index([colaboradorId, criadoEm])
+}
+
+// Capturas de tela anexadas a artigos. Os arquivos ficam no storage privado.
+model DocumentoImagem {
+  id           String    @id @default(uuid())
+  documentoId  String
+  documento    Documento @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  arquivoKey   String    @unique
+  arquivoNome  String
+  arquivoBytes Int
+  mimeType     String
+  legenda      String?
+  ordem        Int       @default(0)
+  criadaEm     DateTime  @default(now())
+  passo        PassoDocumento? @relation("PrintPasso")
+  passoAcesso  PassoDocumento? @relation("PrintAcesso")
+
+  @@index([documentoId, ordem])
+}
+
+// Passo de um documento PASSO_A_PASSO. A ordem começa em zero; a rota
+// garante que o print pertence ao mesmo documento.
+model PassoDocumento {
+  id            String             @id @default(uuid())
+  documentoId   String
+  documento     Documento          @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  ordem         Int
+  titulo        String
+  texto         String?
+  caminhoAcesso String?
+  imagemId      String?            @unique
+  imagem        DocumentoImagem?   @relation("PrintPasso", fields: [imagemId], references: [id], onDelete: SetNull)
+  imagemAcessoId String?           @unique
+  imagemAcesso   DocumentoImagem?  @relation("PrintAcesso", fields: [imagemAcessoId], references: [id], onDelete: SetNull)
+  destaqueTipo  TipoDestaquePasso?
+  destaqueTexto String?
+
+  @@unique([documentoId, ordem])
+}
+
+// Laboratório — mural de ideias para melhorar os sistemas. Qualquer
+// colaborador logado publica (não só EDITOR/ADMIN, ao contrário de Documento):
+// a ideia parte de quem opera o sistema no dia a dia, não só de quem escreve
+// manual. EDITOR/ADMIN só entram para mover o status.
+model Ideia {
+  id          String      @id @default(uuid())
+  titulo      String
+  resumo      String // linha única exibida no card da listagem
+  conteudo    String // corpo em markdown — mesmo renderizador de Documento.conteudo
+  sistemaSlug String? // opcional: ideia pode ser geral, sem sistema específico
+  status      StatusIdeia @default(NOVA)
+
+  autorId String
+  autor   Colaborador @relation("IdeiaAutor", fields: [autorId], references: [id], onDelete: Cascade)
+
+  apoios ApoioIdeia[]
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([status, criadoEm])
+  @@index([sistemaSlug])
+  @@index([autorId])
+}
+
+// Um apoio por colaborador por ideia — é o voto que alimenta o termômetro
+// de apoio na listagem. Apoiar de novo remove o apoio (toggle).
+model ApoioIdeia {
+  id            String      @id @default(uuid())
+  ideiaId       String
+  ideia         Ideia       @relation(fields: [ideiaId], references: [id], onDelete: Cascade)
+  colaboradorId String
+  colaborador   Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  criadoEm      DateTime    @default(now())
+
+  @@unique([ideiaId, colaboradorId])
+  @@index([ideiaId])
+}
+
+// Uma resposta por ciclo móvel de 30 dias para cada colaborador e sistema.
+// As respostas antigas permanecem para acompanhar a evolução das notas.
+model AvaliacaoSistema {
+  id             String      @id @default(uuid())
+  colaboradorId  String
+  colaborador    Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  sistemaSlug    String
+  filialNome     String?     // filial do colaborador no momento do envio
+  nota           Int
+  gosta          String?
+  melhorar       String?
+  gostaria       String?
+  criadoEm       DateTime    @default(now())
+  atualizadoEm   DateTime    @updatedAt
+
+  @@index([colaboradorId, sistemaSlug, criadoEm])
+  @@index([sistemaSlug, criadoEm])
+  @@index([filialNome, criadoEm])
+}
+
+// Trilha de auditoria — registra logins e ações relevantes na área de documentação.
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String
+  actorNome  String
+  actorEmail String
+  acao       String // login | logout | criar | editar | excluir | publicar | despublicar | baixar
+  entidade   String // Colaborador | Documento | Categoria
+  entidadeId String?
+  descricao  String
+  criadoEm   DateTime @default(now())
+
+  @@index([criadoEm])
+  @@index([entidade])
+  @@index([actorId])
+}
+
+// Uma linha por tentativa enviada a um provedor. Não guarda perguntas nem respostas.
+model UsoAssistente {
+  id              String       @id @default(uuid())
+  colaboradorId   String?
+  colaborador     Colaborador? @relation(fields: [colaboradorId], references: [id], onDelete: SetNull)
+  sistemaSlug     String?
+  provedor        String
+  modelo          String
+  status          String
+  httpStatus      Int?
+  entradaTokens   Int?
+  saidaTokens     Int?
+  totalTokens     Int?
+  limiteReqDia    Int?
+  restantesReqDia Int?
+  resetReqEm      DateTime?
+  limiteTokensMin Int?
+  restantesTokensMin Int?
+  resetTokensEm   DateTime?
+  duracaoMs       Int
+  criadoEm        DateTime     @default(now())
+
+  @@index([criadoEm])
+  @@index([provedor, criadoEm])
+  @@index([colaboradorId, criadoEm])
+}
+
+// Conversa privada do colaborador; cada pergunta continua sendo respondida de forma independente.
+model ConversaAssistente {
+  id            String      @id @default(uuid())
+  colaboradorId String
+  colaborador   Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  sistemaSlug   String?
+  titulo        String
+  provedorIa    String?
+  modeloIa      String?
+  criadaEm      DateTime    @default(now())
+  atualizadaEm  DateTime    @updatedAt
+  consultas     ConsultaAssistente[]
+
+  @@index([colaboradorId, atualizadaEm])
+  @@index([atualizadaEm])
+}
+
+model ConsultaAssistente {
+  id            String      @id @default(uuid())
+  colaboradorId String
+  colaborador   Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  conversaId    String
+  conversa      ConversaAssistente @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+  sistemaSlug   String?
+  pergunta      String
+  resposta      String
+  fontes        Json
+  aviso         String?
+  criadoEm      DateTime    @default(now())
+
+  @@index([colaboradorId, criadoEm])
+  @@index([conversaId, criadoEm])
+  @@index([criadoEm])
+}

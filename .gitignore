@@ -1,0 +1,47 @@
+/node_modules
+/.next/
+/.next-perf/
+/out/
+/build
+.env
+.env.local
+.env*.local
+npm-debug.log*
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+
+# Claude Code
+.claude/
+CLAUDE.md
+
+# Storage privado dos PDFs (nunca em public/)
+.docs-storage/
+.local-backups/
+.local-data/
+
+# Arquivos locais de agentes e ferramentas de IA
+/.agents/
+/.codex/
+/.kiro/
+/AGENTS.md
+/CLAUDE.md
+/.claude/
+
+# Infraestrutura e documentos do ambiente anterior
+/deploy.md
+/DOCUMENTACAO.md
+/review-doc.md
+/ecosystem.config.js
+/ecosystem.homologacao.config.js
+/nginx.conf.example
+/nginx.homologacao.conf.example
+/docs/*
+!/docs/identidade-trilara.md
+!/docs/linkedin-trilara.md
+
+# Pacote de imagens duplicado
+/materiais/linkedin/*.zip
+
+# Vinculo local com a Vercel
+/.vercel/

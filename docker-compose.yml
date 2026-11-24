@@ -1,0 +1,30 @@
+name: trilara
+# Banco de desenvolvimento local — Postgres.
+# Subir:   npm run db:up
+# Parar:   docker compose down   (dados persistem no volume)
+# Resetar: docker compose down -v (apaga os dados)
+#
+# Em produção este arquivo não é usado — basta trocar o
+# DATABASE_URL no .env apontando para a instância real.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: trilara-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: trilara
+      POSTGRES_PASSWORD: trilara_dev
+      POSTGRES_DB: trilara
+    ports:
+      - "5435:5432"
+    volumes:
+      - trilara_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trilara -d trilara"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  trilara_pgdata:
+    name: trilara_pgdata

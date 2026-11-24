@@ -1,0 +1,20 @@
+TRILARA — imagens para divulgação
+
+Seleção sugerida para um post com imagens, nesta ordem:
+01-apresentacao.png          Vitrine e proposta do projeto
+06-painel-do-sistema.png     Painel interno com dados de demonstração
+07-biblioteca-de-manuais.png Organização dos manuais por sistema
+08-guia-real.png             Exemplo de guia passo a passo
+05-gestao-e-permissoes.png  Recursos de gestão e controle de acesso
+09-gestao-de-sistemas.png   Tela administrativa de sistemas
+
+Imagens adicionais:
+02-previa-interativa.png
+03-documentacao-interativa.png
+04-passo-a-passo-interativo.png
+
+As capturas foram feitas localmente em 2160 x 1350 pixels. A vitrine e a
+prévia usam dados fictícios. As telas internas foram acessadas com uma conta
+temporária de demonstração, removida após a captura. Revise as imagens e a
+legenda antes de publicar. O site de divulgação ainda precisa ser hospedado
+para que você possa acrescentar o link ao post.

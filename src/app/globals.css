@@ -1,0 +1,427 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+*:focus-visible {
+  outline: 2px solid #12aa99;
+  outline-offset: 2px;
+}
+
+.vinculo-mapa:focus {
+  outline: none;
+}
+
+.vinculo-mapa:focus-visible circle {
+  stroke: #181522;
+  stroke-width: 3px;
+}
+
+.dark .vinculo-mapa:focus-visible circle {
+  stroke: #fff;
+}
+
+body {
+  font-feature-settings: "ss01", "cv11";
+}
+
+/* ───── Tipografia display ───── */
+.display {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 0.98;
+}
+.display-sm {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+}
+
+/* ───── Decorações de fundo ───── */
+.gradient-grid {
+  background-image:
+    /* topo achatado na cor da navbar (ink-50) → some a emenda de "duas cores";
+       o brilho lilás só aparece a partir de ~180px pra baixo */
+    linear-gradient(to bottom, #fafafb 0%, rgba(250, 249, 251, 0) 180px),
+    radial-gradient(circle at 22% 26%, rgba(18, 170, 153, 0.08), transparent 42%),
+    radial-gradient(circle at 82% 14%, rgba(92, 224, 204, 0.10), transparent 52%),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(18, 170, 153, 0.025) 100%);
+}
+.dot-grid {
+  background-image: radial-gradient(rgba(15, 13, 24, 0.06) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* ───── Card base ───── */
+.card {
+  background: #ffffff;
+  border: 1px solid #e8e7ed;
+  border-radius: 20px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  border-color: #12aa99;
+  box-shadow: 0 18px 40px -22px rgba(18, 170, 153, 0.55);
+}
+
+/* ───── Chip (tag mono) ───── */
+.chip {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid #e8e7ed;
+  color: #6b6878;
+  background: white;
+  font-weight: 500;
+}
+
+/* ───── Preview canvas (mini-mockups) ───── */
+.preview-canvas {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(180deg, #f4f3f7 0%, #ffffff 100%);
+  border: 1px solid #e8e7ed;
+}
+
+/* ───── Monogram base ───── */
+.mono-mark {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  font-size: 17px;
+  line-height: 1;
+}
+
+/* ───── Scrollbar polida ───── */
+.scroll-thin::-webkit-scrollbar {
+  width: 6px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+}
+
+/* Abas administrativas continuam deslizáveis sem exibir barras ou setas nativas. */
+.admin-tabs {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.admin-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* ───── Link underline animado ───── */
+.link-hover {
+  position: relative;
+}
+.link-hover::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -2px;
+  height: 1px;
+  background: currentColor;
+  transition: right 0.25s ease;
+}
+.link-hover:hover::after {
+  right: 0;
+}
+
+/* ───── Marquee mask ───── */
+.marquee-mask {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+}
+
+/* ───── Dark mode overrides ───── */
+.dark .card {
+  background: #1f1d28;
+  border-color: #34323f;
+}
+.dark .card-hover:hover {
+  border-color: #12aa99;
+  box-shadow: 0 18px 40px -22px rgba(18, 170, 153, 0.4);
+}
+.dark .chip {
+  background: #34323f;
+  border-color: #4a4858;
+  color: #9694a3;
+}
+.dark .preview-canvas {
+  background: linear-gradient(180deg, #1f1d28 0%, #0f0d18 100%);
+  border-color: #34323f;
+}
+.dark .dot-grid {
+  background-image: radial-gradient(rgba(250, 249, 251, 0.05) 1px, transparent 1px);
+}
+.dark .gradient-grid {
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(18, 170, 153, 0.14), transparent 40%),
+    radial-gradient(circle at 80% 0%,  rgba(92, 224, 204, 0.08), transparent 50%),
+    linear-gradient(to bottom, #0f0d18 0%, #0f0d18 100%);
+}
+.dark .scroll-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ───── SystemModal banner animations ───── */
+@keyframes modal-blob-float {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-14px) scale(1.06); }
+}
+@keyframes modal-blob-drift {
+  0%, 100% { transform: translateX(0px) scale(1); }
+  50%       { transform: translateX(12px) scale(0.94); }
+}
+.modal-blob-1 {
+  animation: modal-blob-float 3s ease-in-out infinite;
+}
+.modal-blob-2 {
+  animation: modal-blob-drift 4s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PORTAL LOGADO — visual próprio, separado do site institucional.
+   O site público é claro, centrado e espaçado; aqui é ferramenta de
+   trabalho: denso, com sidebar escura fixa e o mono como voz estrutural.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ───── Rótulo estrutural ─────
+   Eyebrows, contadores e trilha do portal. Sans (não mono) — o mesmo corpo de
+   texto do resto do produto, só menor e mais espaçado; é o que dá o ar de
+   dashboard "normal" em vez de ferramenta de terminal. */
+.rotulo {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* ───── Malha de fundo do portal ─────
+   Linhas finas em vez dos pontos do site público: leitura de planta baixa. */
+.malha-portal {
+  background-image:
+    linear-gradient(rgba(15, 13, 24, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 13, 24, 0.035) 1px, transparent 1px);
+  background-size: 52px 52px;
+}
+.dark .malha-portal {
+  background-image:
+    linear-gradient(rgba(250, 249, 251, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(250, 249, 251, 0.035) 1px, transparent 1px);
+}
+
+/* ───── Deslocamento de conteúdo pela sidebar ─────
+   A sidebar fixa só existe a partir de lg; o padding-left do conteúdo
+   acompanha, senão o texto ficaria empurrado atrás de nada no mobile. */
+.portal-content {
+  padding-left: 0;
+}
+
+/* Phone/tablet shell: reserve space for the dock and device safe areas. */
+.mobile-dock {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+.mobile-header { padding-top: env(safe-area-inset-top, 0px); }
+.mobile-menu {
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 12px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.mobile-modal {
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.mobile-lightbox {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (max-width: 1023px) {
+  html { scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+  .portal-main {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .portal-main input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  .portal-main textarea, .mobile-modal input, .mobile-modal textarea,
+  .mobile-search input, .auth-page input, .auth-page textarea {
+    font-size: 16px; /* Prevent automatic input zoom on iOS. */
+  }
+  .portal-main input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  .portal-main button[aria-haspopup="listbox"], .portal-main [role="option"] button {
+    min-height: 44px;
+  }
+  .portal-main :is(h1, h2, h3) { overflow-wrap: anywhere; }
+  .portal-main nav[aria-label*="estrutural"], .portal-main nav[aria-label*="navega"] { flex-wrap: wrap; }
+  .portal-main nav[aria-label*="estrutural"] a, .portal-main nav[aria-label*="navega"] a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+  }
+}
+@media (max-width: 767px) {
+  .mobile-indicators {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(230px, 78%);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 2px 2px 8px;
+    scrollbar-width: thin;
+  }
+  .mobile-indicators > * { scroll-snap-align: start; }
+  .mobile-document-table, .mobile-document-table tbody { display: block; }
+  .mobile-document-table thead { display: none; }
+  .mobile-document-table tr { display: grid; grid-template-columns: minmax(0, 1fr); padding: 16px; gap: 12px; }
+  .mobile-document-table .document-title { display: block; padding: 0; }
+  .mobile-document-table .document-title .truncate { white-space: normal; overflow-wrap: anywhere; }
+  .mobile-document-table .document-status { display: block; padding: 0; }
+  .mobile-document-table .document-actions { display: block; padding: 0; }
+  .mobile-document-table .document-actions > div { justify-content: flex-start; flex-wrap: wrap; gap: 6px; }
+  .mobile-document-table .document-actions a:first-child { margin-right: auto; }
+  .mobile-history-table, .mobile-history-table tbody { display: block; }
+  .mobile-history-table thead { display: none; }
+  .mobile-history-table tr { display: grid; padding: 16px; gap: 10px; }
+  .mobile-history-table td { display: block; padding: 0; overflow-wrap: anywhere; }
+  .mobile-history-table td::before { display: block; font-size: 11px; font-weight: 600; color: #9694a3; margin-bottom: 2px; }
+  .mobile-history-table td:nth-child(1)::before { content: 'DATA E HORA'; }
+  .mobile-history-table td:nth-child(2)::before { content: 'RESPONSÁVEL'; }
+  .mobile-history-table td:nth-child(3)::before { content: 'AÇÃO'; }
+  .mobile-history-table td:nth-child(4)::before { content: 'DOCUMENTO / ALTERAÇÃO'; }
+  .mobile-pagination a, .mobile-pagination [aria-current] { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; }
+}
+@media (max-width: 639px) {
+  .portal-page h1 { font-size: 24px; line-height: 1.25; }
+  .mobile-user-row { align-items: flex-start; padding: 16px; gap: 12px; }
+  .mobile-user-row .truncate { white-space: normal; overflow-wrap: anywhere; }
+  .mobile-user-actions { width: 100%; flex-wrap: wrap; border-top: 1px solid #e8e7ed; padding-top: 8px; justify-content: flex-start; gap: 4px; }
+  .dark .mobile-user-actions { border-color: #34323f; }
+  .mobile-user-actions > :is(a, button) { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: 0 8px; border-radius: 8px; }
+  .mobile-search { padding-top: calc(env(safe-area-inset-top, 0px) + 16px); }
+  .mobile-search-results { max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 140px); }
+}
+@media (min-width: 1024px) {
+  .portal-content {
+    padding-left: var(--sidebar-w, 260px);
+  }
+}
+
+/* ───── Entrada em sequência ─────
+   Uma única orquestração no carregamento do portal, sem efeitos soltos. */
+@keyframes portal-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+/* `backwards`, e não `both`: com `both` o transform do último quadro fica
+   aplicado para sempre, e um transform num ancestral faz os `position: fixed`
+   de dentro dele se medirem pelo ancestral em vez da janela. Como o <main>
+   do portal usa esta classe, era isso que deixava o fundo dos modais cobrindo
+   só a altura do conteúdo. */
+.portal-in {
+  animation: portal-in 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-in { animation: none; }
+}
+
+/* ───── Scramble de letras (Navbar) ─────
+   Substitui o AnimatePresence do framer-motion: a troca de `key` remonta o
+   span e o navegador dispara a animação de entrada sozinho. */
+@keyframes letter-swap-in {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.letter-swap-in {
+  animation: letter-swap-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .letter-swap-in { animation: none; }
+}
+
+.conteudo-artigo > :first-child { margin-top: 0 !important; }
+
+@media print {
+  /* A impressão especial só é aplicada quando há um guia na página. */
+  html:has(.guia-impressao),
+  body:has(.guia-impressao),
+  html.guia-impressao-ativa,
+  body.guia-impressao-ativa,
+  html.guia-impressao-ativa body.guia-impressao-ativa,
+  body:has(.guia-impressao) .portal-raiz,
+  html.guia-impressao-ativa .portal-raiz {
+    background-color: #fff !important;
+    background-image: none !important;
+  }
+  html:has(.guia-impressao) .portal-sidebar,
+  html:has(.guia-impressao) .mobile-header,
+  html:has(.guia-impressao) .mobile-dock,
+  html:has(.guia-impressao) .assistente-flutuante { display: none !important; }
+  html:has(.guia-impressao) .portal-content { padding-left: 0 !important; }
+  html:has(.guia-impressao) .portal-main { padding-bottom: 0 !important; }
+  .guia-impressao {
+    padding: 9mm 11mm !important;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+  .guia-impressao .cabecalho-guia-impressao {
+    margin-bottom: 3mm;
+    padding-bottom: 3mm;
+    break-after: avoid;
+  }
+  .guia-impressao,
+  .guia-impressao * {
+    color: #111018 !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
+  .guia-impressao > header {
+    margin-bottom: 4mm !important;
+    padding: 4mm !important;
+  }
+  .guia-impressao .guia-passo {
+    border: 1px solid #d6d4de !important;
+    padding: 4mm !important;
+  }
+  /* Mantém o título, o print e a dica na mesma folha quando o passo couber. */
+  .guia-impressao .guia-passo-com-destaque {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+  .guia-impressao .guia-passo > div,
+  .guia-impressao .guia-midia { margin-top: 3mm !important; }
+  .guia-impressao .guia-passo h2 { break-after: avoid; }
+  .guia-impressao .guia-conjunto-print { break-inside: avoid-page; }
+  .guia-impressao .destaque-passo,
+  .guia-impressao .print-passo { break-inside: avoid; }
+  .guia-impressao .print-passo {
+    aspect-ratio: auto !important;
+    height: auto !important;
+    max-width: 15.5cm;
+  }
+  .guia-impressao .print-passo img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 11cm;
+  }
+}
